@@ -1,0 +1,88 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\intro\\source\\repos\\Meteorite\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|c:\\users\\intro\\source\\repos\\meteorite\\meteorite\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|solutionrelative:meteorite\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|c:\\users\\intro\\source\\repos\\meteorite\\meteorite\\gui\\app.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|solutionrelative:meteorite\\gui\\app.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|c:\\users\\intro\\source\\repos\\meteorite\\meteorite\\gui\\frontend.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|solutionrelative:meteorite\\gui\\frontend.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|c:\\users\\intro\\source\\repos\\meteorite\\meteorite\\gui\\appstyle.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{DF588321-1FCF-49F4-B1C1-BCA18EE11F45}|Meteorite\\Meteorite.csproj|solutionrelative:meteorite\\gui\\appstyle.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AppStyle.css",
+              "DocumentMoniker": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\GUI\\AppStyle.css",
+              "RelativeDocumentMoniker": "Meteorite\\GUI\\AppStyle.css",
+              "ToolTip": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\GUI\\AppStyle.css",
+              "RelativeToolTip": "Meteorite\\GUI\\AppStyle.css",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-03-09T23:16:45.487Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Frontend.js",
+              "DocumentMoniker": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\GUI\\Frontend.js",
+              "RelativeDocumentMoniker": "Meteorite\\GUI\\Frontend.js",
+              "ToolTip": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\GUI\\Frontend.js",
+              "RelativeToolTip": "Meteorite\\GUI\\Frontend.js",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-09T23:16:15.946Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "App.html",
+              "DocumentMoniker": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\GUI\\App.html",
+              "RelativeDocumentMoniker": "Meteorite\\GUI\\App.html",
+              "ToolTip": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\GUI\\App.html",
+              "RelativeToolTip": "Meteorite\\GUI\\App.html",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
+              "WhenOpened": "2026-03-09T23:08:54.36Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\Program.cs",
+              "RelativeDocumentMoniker": "Meteorite\\Program.cs",
+              "ToolTip": "C:\\Users\\intro\\source\\repos\\Meteorite\\Meteorite\\Program.cs",
+              "RelativeToolTip": "Meteorite\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-09T23:09:11.156Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

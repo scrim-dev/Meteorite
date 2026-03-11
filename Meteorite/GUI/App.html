@@ -1,0 +1,260 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteorite Downloader</title>
+    <link rel="stylesheet" href="AppStyle.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div id="splash-screen" class="splash">
+        <div class="splash-inner">
+            <div class="splash-icon"><i class="fa-solid fa-meteor"></i></div>
+            <div class="splash-title">Meteorite</div>
+            <div class="splash-sub">Medal.tv Clip Downloader</div>
+            <div class="splash-bar-track">
+                <div class="splash-bar-fill" id="splash-bar"></div>
+            </div>
+            <div class="splash-status" id="splash-status">Loading...</div>
+        </div>
+    </div>
+
+    <div id="welcome-screen" class="welcome-screen" style="display:none;">
+        <div class="welcome-inner">
+            <div class="welcome-icon"><i class="fa-solid fa-meteor"></i></div>
+            <h2 class="welcome-title">Welcome to Meteorite</h2>
+            <p class="welcome-sub">Your Medal.tv clip downloader is ready. Let's take a quick tour.</p>
+            <div class="welcome-actions">
+                <button class="btn-primary" id="btn-start-tour"><i class="fa-solid fa-map"></i> Take the Tour</button>
+                <button class="btn-secondary" id="btn-skip-tour">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tour-overlay" style="display:none;">
+        <div class="tour-highlight" id="tour-highlight"></div>
+        <div class="tour-tooltip" id="tour-tooltip">
+            <div class="tour-tooltip-header">
+                <span id="tour-step-label"></span>
+                <span class="tour-step-count" id="tour-step-count"></span>
+            </div>
+            <p id="tour-tooltip-text"></p>
+            <div class="tour-tooltip-actions">
+                <button class="btn-secondary" id="btn-tour-skip">Skip Tour</button>
+                <button class="btn-primary" id="btn-tour-next">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i class="fa-solid fa-meteor"></i></div>
+                <h2>Meteorite</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="nav-item active" data-tab="downloader" id="nav-downloader"><span class="icon"><i
+                            class="fa-solid fa-download"></i></span> Downloader</li>
+                <li class="nav-item" data-tab="history" id="nav-history"><span class="icon"><i
+                            class="fa-solid fa-clock-rotate-left"></i></span> History</li>
+                <li class="nav-item" data-tab="settings" id="nav-settings"><span class="icon"><i
+                            class="fa-solid fa-gear"></i></span> Settings</li>
+                <li class="nav-item" data-tab="applogs" id="nav-applogs"><span class="icon"><i
+                            class="fa-solid fa-terminal"></i></span> App Logs</li>
+                <li class="nav-item" data-tab="about" id="nav-about"><span class="icon"><i
+                            class="fa-solid fa-circle-info"></i></span> About</li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <section id="downloader" class="view active">
+                <div class="view-header">
+                    <div>
+                        <h1>Medal.tv Downloader</h1>
+                        <p>Download your clips without watermarks.</p>
+                    </div>
+                </div>
+
+                <div class="panel" id="tour-panel-download">
+                    <div class="panel-body downloader-hero">
+                        <div class="hero-icon">
+                            <i class="fa-solid fa-cloud-arrow-down" id="hero-main-icon"></i>
+                            <i class="fa-solid fa-file" id="hero-file-icon" style="display:none;"></i>
+                        </div>
+                        <div class="input-row" style="max-width:600px;width:100%;">
+                            <input type="text" id="medal-url" placeholder="Paste a Medal.tv clip URL...">
+                            <button id="btn-download" class="btn-primary"><i
+                                    class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                        <div id="loading-container" class="loading-area"
+                            style="display:none;max-width:600px;width:100%;">
+                            <div class="loading-bar-track">
+                                <div class="loading-bar-fill" id="loading-progress"></div>
+                            </div>
+                            <div id="download-details" class="download-mb"></div>
+                        </div>
+                        <div id="download-status" class="status-message"></div>
+                    </div>
+                </div>
+
+                <div class="panel" id="tour-panel-options">
+                    <div class="panel-header">
+                        <span class="panel-header-left"><i class="fa-solid fa-sliders"></i> Download Options</span>
+                    </div>
+                    <div class="panel-body options-grid">
+                        <label class="option-item">
+                            <input type="checkbox" id="opt-open-folder">
+                            <span class="option-check"></span>
+                            <span class="option-label"><i class="fa-solid fa-folder-open"></i> Open folder after
+                                download</span>
+                        </label>
+                        <label class="option-item">
+                            <input type="checkbox" id="opt-play-video">
+                            <span class="option-check"></span>
+                            <span class="option-label"><i class="fa-solid fa-circle-play"></i> Play video after
+                                download</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel" id="tour-panel-queue">
+                    <div class="panel-header">
+                        <span class="panel-header-left">
+                            <i class="fa-solid fa-layer-group"></i> Download Queue
+                            <span class="queue-count" id="queue-count">0</span>
+                        </span>
+                        <button class="btn-secondary" id="btn-clear-queue"
+                            style="height:28px;font-size:11px;padding:0 10px;">
+                            <i class="fa-solid fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="panel-body">
+                        <div class="queue-add-row">
+                            <input type="text" id="queue-url-input" placeholder="Add a clip URL to the queue...">
+                            <button class="btn-primary" id="btn-add-queue"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <div id="queue-list" class="queue-list">
+                            <p class="queue-empty"><i class="fa-solid fa-inbox"></i> Queue is empty</p>
+                        </div>
+                        <div class="queue-footer">
+                            <button class="btn-primary" id="btn-start-queue"><i class="fa-solid fa-play"></i> Start
+                                Queue</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="history" class="view">
+                <div class="view-header">
+                    <div>
+                        <h1>Download History</h1>
+                    </div>
+                    <button id="btn-clear-history" class="btn-danger"><i class="fa-solid fa-trash"></i> Clear
+                        History</button>
+                </div>
+                <div id="history-list" class="history-grid"></div>
+            </section>
+
+            <section id="settings" class="view">
+                <div class="view-header">
+                    <div>
+                        <h1>Settings</h1>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-body">
+                        <div class="setting-item">
+                            <label for="download-path">Default Download Path</label>
+                            <input type="text" id="download-path">
+                        </div>
+                        <div class="setting-item">
+                            <label>Auto Downloader (Monitor Clipboard)</label>
+                            <label class="switch">
+                                <input type="checkbox" id="auto-downloader">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <button id="btn-save-settings" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save
+                            Settings</button>
+                        <div id="settings-status" class="status-message"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="applogs" class="view">
+                <div class="view-header">
+                    <div>
+                        <h1>Application Logs</h1>
+                    </div>
+                    <button id="btn-clear-logs" class="btn-secondary"><i class="fa-solid fa-eraser"></i> Clear</button>
+                </div>
+                <div class="logs-card">
+                    <div id="log-container" class="log-container"></div>
+                </div>
+            </section>
+
+            <section id="about" class="view">
+                <div class="about-card">
+                    <div class="about-logo"><i class="fa-solid fa-meteor"></i></div>
+                    <h2>Meteorite</h2>
+                    <p id="app-version">Version 1.0.0</p>
+                    <div class="social-links">
+                        <a href="https://github.com/scrim-dev" target="_blank" class="btn-primary"><i
+                                class="fa-brands fa-github"></i> GitHub</a>
+                        <a href="https://scrim.cc/" target="_blank" class="btn-primary"><i
+                                class="fa-solid fa-globe"></i> Website</a>
+                    </div>
+                    <div class="credits-block">
+                        <div class="credits-block-title"><i class="fa-solid fa-star"></i> Credits</div>
+                        <div class="credit-row">
+                            <span class="credit-role">Created &amp; Developed by</span>
+                            <span class="credit-name"><span class="sparkle-wrapper"><span
+                                        class="rainbow-name">Scrim-Dev</span><span class="sparkle"
+                                        style="--d:0s;--x:8px;--y:-8px;">✦</span><span class="sparkle"
+                                        style="--d:0.3s;--x:-6px;--y:-12px;">✦</span><span class="sparkle"
+                                        style="--d:0.6s;--x:14px;--y:-4px;">✦</span></span></span>
+                        </div>
+                        <div class="credit-row">
+                            <span class="credit-role">UI/UX Design by</span>
+                            <span class="credit-name"><span class="sparkle-wrapper"><span
+                                        class="rainbow-name">Scrim-Dev</span><span class="sparkle"
+                                        style="--d:0.2s;--x:10px;--y:-10px;">✦</span></span> &amp; Claude AI</span>
+                        </div>
+                        <div class="credit-row">
+                            <span class="credit-role">Medal API (TypeScript)</span>
+                            <span class="credit-name">Tyson3101</span>
+                        </div>
+                        <div class="credit-row">
+                            <span class="credit-role">C# Port of Medal API</span>
+                            <span class="credit-name">Claude AI</span>
+                        </div>
+                        <div class="credit-row credit-row-special">
+                            <span class="credit-role">Special Thanks</span>
+                            <span class="credit-name">Photino — for the incredible framework</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="custom-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <div id="modal-input-container" style="display:none;margin-bottom:16px;">
+                <input type="text" id="modal-input" readonly>
+            </div>
+            <div class="modal-buttons" id="modal-buttons"></div>
+        </div>
+    </div>
+
+    <script src="Frontend.js"></script>
+</body>
+
+</html>
