@@ -1,2 +1,2 @@
 # Meteorite
-A downloader client for Medal.tv
+A downloader client for Medal.tv (W.I.P)
