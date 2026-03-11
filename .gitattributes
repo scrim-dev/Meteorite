@@ -1,3 +1,3 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-Meteorite/Meteorite/GUI linguist-vendored
+Meteorite/Meteorite/GUI/** linguist-vendored
