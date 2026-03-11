@@ -12,6 +12,7 @@ namespace Meteorite
 {
     internal class Program
     {
+        public const string VERSION = "1.0.0";
         public static PhotinoWindow? MainWindow { get; private set; }
 
         [STAThread]
@@ -91,8 +92,7 @@ namespace Meteorite
             if (action == "ui_ready")
             {
                 Logger.Log("Application UI started and connected.", "INFO");
-                string version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
-                Program.Send(window, "app_version", version);
+                Program.Send(window, "app_version", Program.VERSION);
             }
             else if (action == "get_settings")
             {
@@ -106,7 +106,11 @@ namespace Meteorite
                 {
                     SettingsManager.Current.DownloadPath = newSettings.DownloadPath;
                     SettingsManager.Current.Theme = newSettings.Theme;
+                    SettingsManager.Current.AccentColor = newSettings.AccentColor;
+                    SettingsManager.Current.RainbowMode = newSettings.RainbowMode;
                     SettingsManager.Current.AutoDownloader = newSettings.AutoDownloader;
+                    SettingsManager.Current.SidebarCollapsed = newSettings.SidebarCollapsed;
+                    SettingsManager.Current.EasterEggUnlocked = newSettings.EasterEggUnlocked;
                     SettingsManager.Save();
                     Logger.Log("Settings saved successfully.", "INFO");
                     Program.Send(window, "settings_saved", null);

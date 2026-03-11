@@ -1,3 +1,27 @@
+@property --accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #BEF837;
+}
+
+@property --accent-dim {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(190, 248, 55, 0.15);
+}
+
+@property --accent-glow {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(190, 248, 55, 0.45);
+}
+
+@property --border-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(190, 248, 55, 0.35);
+}
+
 :root {
     --bg: #161617;
     --bg-panel: #1e1e20;
@@ -13,6 +37,19 @@
     --text-dim: #9090a8;
     --danger: #ff5f6d;
     --sidebar-w: 220px;
+    transition: background 0.3s, color 0.3s;
+}
+
+body.theme-light {
+    --bg: #f0f0f2;
+    --bg-panel: #ffffff;
+    --bg-card: #f7f7fa;
+    --bg-hover: #eaeaef;
+    --border: rgba(0, 0, 0, 0.09);
+    --border-accent: rgba(0, 0, 0, 0.18);
+    --text: #1a1a24;
+    --text-muted: #8888a0;
+    --text-dim: #555568;
 }
 
 * {
@@ -1159,12 +1196,14 @@ input:checked+.slider:before {
 }
 
 .rainbow-name {
-    background: linear-gradient(90deg, #ffb3de, #ffda9e, #f9ff9e, #b3ffc6, #9ee8ff, #c5b3ff, #ffb3de);
-    background-size: 250% 100%;
+    background: linear-gradient(90deg,
+            #ffb3de, #ffda9e, #f9ff9e, #b3ffc6, #9ee8ff, #c5b3ff,
+            #ffb3de, #ffda9e, #f9ff9e, #b3ffc6, #9ee8ff, #c5b3ff, #ffb3de);
+    background-size: 400% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: rainbowShift 4s linear infinite;
+    animation: rainbowShift 5s linear infinite;
     font-weight: 700;
 }
 
@@ -1174,7 +1213,7 @@ input:checked+.slider:before {
     }
 
     100% {
-        background-position: 250% 50%;
+        background-position: -300% 50%;
     }
 }
 
@@ -1213,4 +1252,326 @@ input:checked+.slider:before {
     color: var(--text-muted);
     font-style: italic;
     font-weight: 400;
+}
+
+.theme-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.theme-btn {
+    height: 34px;
+    padding: 0 16px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.theme-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.theme-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.accent-picker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.accent-swatches {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.swatch:hover {
+    transform: scale(1.15);
+}
+
+.swatch.active {
+    border-color: var(--text);
+    transform: scale(1.15);
+}
+
+.accent-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.accent-custom input[type="color"] {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    padding: 2px;
+    background: transparent;
+    cursor: pointer;
+}
+
+@keyframes rainbowBg {
+    0% {
+        --accent: hsl(0, 100%, 85%);
+        --accent-dim: hsla(0, 100%, 85%, 0.18);
+        --accent-glow: hsla(0, 100%, 85%, 0.45);
+        --border-accent: hsla(0, 100%, 85%, 0.35);
+    }
+
+    12.5% {
+        --accent: hsl(45, 100%, 85%);
+        --accent-dim: hsla(45, 100%, 85%, 0.18);
+        --accent-glow: hsla(45, 100%, 85%, 0.45);
+        --border-accent: hsla(45, 100%, 85%, 0.35);
+    }
+
+    25% {
+        --accent: hsl(90, 100%, 85%);
+        --accent-dim: hsla(90, 100%, 85%, 0.18);
+        --accent-glow: hsla(90, 100%, 85%, 0.45);
+        --border-accent: hsla(90, 100%, 85%, 0.35);
+    }
+
+    37.5% {
+        --accent: hsl(135, 100%, 85%);
+        --accent-dim: hsla(135, 100%, 85%, 0.18);
+        --accent-glow: hsla(135, 100%, 85%, 0.45);
+        --border-accent: hsla(135, 100%, 85%, 0.35);
+    }
+
+    50% {
+        --accent: hsl(180, 100%, 85%);
+        --accent-dim: hsla(180, 100%, 85%, 0.18);
+        --accent-glow: hsla(180, 100%, 85%, 0.45);
+        --border-accent: hsla(180, 100%, 85%, 0.35);
+    }
+
+    62.5% {
+        --accent: hsl(225, 100%, 85%);
+        --accent-dim: hsla(225, 100%, 85%, 0.18);
+        --accent-glow: hsla(225, 100%, 85%, 0.45);
+        --border-accent: hsla(225, 100%, 85%, 0.35);
+    }
+
+    75% {
+        --accent: hsl(270, 100%, 85%);
+        --accent-dim: hsla(270, 100%, 85%, 0.18);
+        --accent-glow: hsla(270, 100%, 85%, 0.45);
+        --border-accent: hsla(270, 100%, 85%, 0.35);
+    }
+
+    87.5% {
+        --accent: hsl(315, 100%, 85%);
+        --accent-dim: hsla(315, 100%, 85%, 0.18);
+        --accent-glow: hsla(315, 100%, 85%, 0.45);
+        --border-accent: hsla(315, 100%, 85%, 0.35);
+    }
+
+    100% {
+        --accent: hsl(360, 100%, 85%);
+        --accent-dim: hsla(360, 100%, 85%, 0.18);
+        --accent-glow: hsla(360, 100%, 85%, 0.45);
+        --border-accent: hsla(360, 100%, 85%, 0.35);
+    }
+}
+
+body.rainbow-mode {
+    animation: rainbowBg 8s linear infinite;
+}
+
+/* Sidebar Collapse */
+.sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed {
+    width: 68px;
+    min-width: 68px;
+}
+
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .logo h2 {
+    display: none;
+}
+
+.sidebar.collapsed .logo {
+    justify-content: center;
+    padding-left: 0;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding-left: 0;
+}
+
+.sidebar.collapsed .icon {
+    margin-right: 0;
+    font-size: 18px;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.sidebar-collapse-btn {
+    width: 100%;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.sidebar-collapse-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.sidebar.collapsed .sidebar-collapse-btn {
+    justify-content: center;
+    gap: 0;
+}
+
+.sidebar.collapsed #sidebar-toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Egg Indicator */
+.egg-indicator {
+    position: absolute;
+    right: 12px;
+    font-size: 10px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: scale(0.5);
+    pointer-events: none;
+}
+
+.sidebar.collapsed .egg-indicator {
+    top: 6px;
+    right: 18px;
+}
+
+.nav-item:hover .egg-indicator.hinting {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.egg-badge {
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    margin-left: 6px;
+    text-transform: uppercase;
+}
+
+/* Color Picker Modal */
+.color-picker-card {
+    max-width: 340px;
+}
+
+.cp-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.cp-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid var(--border-accent);
+    background: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.cp-presets {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.cp-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s;
+    padding: 0;
+}
+
+.cp-swatch:hover {
+    transform: scale(1.1);
+}
+
+.cp-swatch.active {
+    border-color: var(--text);
+    transform: scale(1.1);
+}
+
+.cp-hex-row {
+    display: flex;
+    align-items: center;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 12px;
+    margin-bottom: 24px;
+}
+
+.cp-hash {
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.cp-hex-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    height: 40px;
+    font-family: monospace;
+    font-size: 16px;
+    outline: none;
+    padding-left: 4px;
+    text-transform: uppercase;
 }

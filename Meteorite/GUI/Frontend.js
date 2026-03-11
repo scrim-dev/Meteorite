@@ -7,46 +7,51 @@ let autoDownloaderInterval = null;
 let lastSeenClipboardUrl = '';
 let downloadQueue = [];
 let queueRunning = false;
+let selectedTheme = 'dark';
+let selectedAccent = '#BEF837';
+let rainbowModeOn = false;
+let tourStep = 0;
+let sidebarCollapsed = false;
+let easterEggUnlocked = false;
+let settingsClickCount = 0;
 
 const TOUR_STEPS = [
     {
         target: 'tour-panel-download',
         title: 'Downloader',
-        text: 'Paste any Medal.tv clip URL here and hit the arrow button to download. Press Enter to also trigger the download.'
+        text: 'Paste any Medal.tv clip URL here and hit the arrow button. Press Enter to trigger the download instantly.'
     },
     {
         target: 'tour-panel-options',
         title: 'Download Options',
-        text: 'Choose what happens after a clip finishes downloading — automatically open the folder or play the video.'
+        text: 'Choose what happens after a clip finishes — auto-open the folder or auto-play the video.'
     },
     {
         target: 'tour-panel-queue',
         title: 'Download Queue',
-        text: 'Add multiple clip URLs to download one after another. Press Start Queue and Meteorite handles the rest.'
+        text: 'Add multiple clip URLs to a queue and download them one after another. Add a URL and hit Start Queue.'
     },
     {
         target: 'nav-history',
         title: 'History',
-        text: 'Every downloaded clip is logged here with the date, source URL, and file location.'
+        text: 'Every clip you download is logged here with its date, URL, and file location.'
     },
     {
         target: 'nav-settings',
         title: 'Settings',
-        text: 'Set your default download folder and toggle the clipboard monitor, which auto-downloads clips you copy.'
+        text: 'Set your download folder, monitor clipboard, and pick colors. Pst... I heard clicking this 10 times unlocks a hidden surprise. Watch the indicator!'
     },
     {
         target: 'nav-applogs',
         title: 'App Logs',
-        text: 'Real-time log output from the application — useful for troubleshooting and seeing exactly what\'s happening.'
+        text: 'Real-time log output from the backend — useful for seeing exactly what\'s happening and troubleshooting.'
     },
     {
         target: 'nav-about',
         title: 'About',
-        text: 'App version, links, and credits. You\'ve completed the tour — enjoy Meteorite!'
+        text: 'App version info, links, and credits. That\'s the tour — you\'re all set to use Meteorite!'
     }
 ];
-
-let tourStep = 0;
 
 window.external.receiveMessage((message) => {
     try {
@@ -63,11 +68,25 @@ function handleBackendMessage(type, data) {
         document.getElementById('auto-downloader').checked = data.AutoDownloader;
         isAutoDownloaderOn = data.AutoDownloader;
         setupAutoDownloader();
+
+        selectedTheme = data.Theme || 'dark';
+        selectedAccent = data.AccentColor || '#BEF837';
+        rainbowModeOn = !!data.RainbowMode;
+        sidebarCollapsed = !!data.SidebarCollapsed;
+        easterEggUnlocked = !!data.EasterEggUnlocked;
+
+        applyTheme(selectedTheme);
+        applyAccent(selectedAccent);
+        applyRainbowMode(rainbowModeOn);
+        applySidebarState(sidebarCollapsed);
+        applyEasterEggState(easterEggUnlocked);
+
+        syncSettingsUI();
         return;
     }
     if (type === 'settings_saved') {
         const el = document.getElementById('settings-status');
-        el.textContent = 'Settings saved successfully!';
+        el.textContent = 'Settings saved.';
         el.className = 'status-message status-success';
         setTimeout(() => { el.textContent = ''; }, 3000);
         isAutoDownloaderOn = document.getElementById('auto-downloader').checked;
@@ -103,10 +122,60 @@ function handleBackendMessage(type, data) {
         return;
     }
     if (type === 'tour_state') {
-        if (!data.shown) {
-            showWelcomeScreen();
-        }
+        if (!data.shown) showWelcomeScreen();
     }
+}
+
+function applyTheme(theme) {
+    document.body.classList.toggle('theme-light', theme === 'light');
+}
+
+function applyAccent(color) {
+    if (!color.startsWith('#')) color = '#' + color;
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    document.documentElement.style.setProperty('--accent', color);
+    document.documentElement.style.setProperty('--accent-dim', `rgba(${r},${g},${b},0.15)`);
+    document.documentElement.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.45)`);
+    document.documentElement.style.setProperty('--border-accent', `rgba(${r},${g},${b},0.35)`);
+    document.getElementById('cp-preview').style.backgroundColor = color;
+}
+
+function applyRainbowMode(on) {
+    document.body.classList.toggle('rainbow-mode', on);
+}
+
+function applySidebarState(collapsed) {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed', collapsed);
+}
+
+function applyEasterEggState(unlocked) {
+    document.getElementById('rainbow-setting').style.display = unlocked ? 'block' : 'none';
+}
+
+function syncSettingsUI() {
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-theme') === selectedTheme);
+    });
+    document.querySelectorAll('.swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-color').toLowerCase() === selectedAccent.toLowerCase());
+    });
+    const rainbowCheck = document.getElementById('rainbow-mode');
+    if (rainbowCheck) rainbowCheck.checked = rainbowModeOn;
+}
+
+function saveCurrentSettings() {
+    sendMessageToBackend('save_settings', {
+        DownloadPath: document.getElementById('download-path').value.trim(),
+        Theme: selectedTheme,
+        AccentColor: selectedAccent,
+        RainbowMode: rainbowModeOn,
+        AutoDownloader: document.getElementById('auto-downloader').checked,
+        SidebarCollapsed: sidebarCollapsed,
+        EasterEggUnlocked: easterEggUnlocked
+    });
 }
 
 function onDownloadProgress(data) {
@@ -118,7 +187,6 @@ function onDownloadProgress(data) {
     const heroFile = document.getElementById('hero-file-icon');
 
     container.style.display = 'block';
-
     if (data.status !== 'downloading') return;
 
     status.textContent = 'Downloading clip...';
@@ -188,15 +256,10 @@ function onDownloadStatus(data) {
         status.innerHTML = '';
         status.appendChild(successDiv);
         status.className = 'status-message status-success';
-
         document.getElementById('medal-url').value = '';
 
-        if (document.getElementById('opt-open-folder')?.checked) {
-            sendMessageToBackend('open_folder', fp);
-        }
-        if (document.getElementById('opt-play-video')?.checked) {
-            sendMessageToBackend('play_video', fp);
-        }
+        if (document.getElementById('opt-open-folder')?.checked) sendMessageToBackend('open_folder', fp);
+        if (document.getElementById('opt-play-video')?.checked) sendMessageToBackend('play_video', fp);
 
         markActiveQueueItemDone();
         resetHeroIcon();
@@ -250,6 +313,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (tabId === 'history') sendMessageToBackend('get_history');
             if (tabId === 'settings') sendMessageToBackend('get_settings');
+
+            if (tabId === 'settings' && !easterEggUnlocked) {
+                settingsClickCount++;
+                const indicator = document.getElementById('egg-indicator');
+                indicator.classList.add('hinting');
+                indicator.style.opacity = (settingsClickCount / 10).toString();
+                indicator.style.transform = `scale(${0.5 + (settingsClickCount / 10) * 0.5})`;
+
+                if (settingsClickCount >= 10) {
+                    easterEggUnlocked = true;
+                    applyEasterEggState(true);
+                    indicator.classList.remove('hinting');
+                    indicator.style.opacity = '0';
+                    showModal('Easter Egg Unlocked!', 'You\'ve unlocked the secret Rainbow Mode in Settings! ✦', 'alert');
+                    saveCurrentSettings();
+                }
+            }
         });
     });
 
@@ -263,11 +343,86 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
-        sendMessageToBackend('save_settings', {
-            DownloadPath: document.getElementById('download-path').value.trim(),
-            Theme: 'dark',
-            AutoDownloader: document.getElementById('auto-downloader').checked
+        selectedTheme = document.querySelector('.theme-btn.active')?.getAttribute('data-theme') || 'dark';
+        rainbowModeOn = document.getElementById('rainbow-mode').checked;
+        saveCurrentSettings();
+        applyTheme(selectedTheme);
+        applyAccent(selectedAccent);
+        applyRainbowMode(rainbowModeOn);
+    });
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedTheme = btn.getAttribute('data-theme');
+            applyTheme(selectedTheme);
         });
+    });
+
+    document.querySelectorAll('.swatch').forEach(sw => {
+        sw.addEventListener('click', () => {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            sw.classList.add('active');
+            selectedAccent = sw.getAttribute('data-color');
+            applyAccent(selectedAccent);
+        });
+    });
+
+    document.getElementById('btn-sidebar-toggle').addEventListener('click', () => {
+        sidebarCollapsed = !sidebarCollapsed;
+        applySidebarState(sidebarCollapsed);
+        saveCurrentSettings();
+    });
+
+    document.getElementById('btn-open-color-picker').addEventListener('click', () => {
+        document.getElementById('color-picker-modal').style.display = 'flex';
+        document.getElementById('cp-hex-input').value = selectedAccent.replace('#', '');
+        document.getElementById('cp-preview').style.backgroundColor = selectedAccent;
+
+        document.querySelectorAll('.cp-swatch').forEach(s => {
+            s.classList.toggle('active', s.getAttribute('data-color').toLowerCase() === selectedAccent.toLowerCase());
+        });
+    });
+
+    document.querySelectorAll('.cp-swatch').forEach(sw => {
+        sw.addEventListener('click', () => {
+            document.querySelectorAll('.cp-swatch').forEach(s => s.classList.remove('active'));
+            sw.classList.add('active');
+            const color = sw.getAttribute('data-color');
+            document.getElementById('cp-hex-input').value = color.replace('#', '');
+            document.getElementById('cp-preview').style.backgroundColor = color;
+        });
+    });
+
+    document.getElementById('cp-hex-input').addEventListener('input', e => {
+        let val = e.target.value.trim();
+        if (val.length === 3 || val.length === 6) {
+            if (/^[0-9A-Fa-f]+$/.test(val)) {
+                document.getElementById('cp-preview').style.backgroundColor = '#' + val;
+            }
+        }
+    });
+
+    document.getElementById('cp-confirm').addEventListener('click', () => {
+        let val = document.getElementById('cp-hex-input').value.trim();
+        if (/^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(val)) {
+            selectedAccent = '#' + val;
+            applyAccent(selectedAccent);
+            saveCurrentSettings();
+            document.getElementById('color-picker-modal').style.display = 'none';
+        } else {
+            showModal('Invalid Color', 'Please enter a valid hex code (e.g. BEF837)', 'alert');
+        }
+    });
+
+    document.getElementById('cp-cancel').addEventListener('click', () => {
+        document.getElementById('color-picker-modal').style.display = 'none';
+    });
+
+    document.getElementById('rainbow-mode').addEventListener('change', e => {
+        rainbowModeOn = e.target.checked;
+        applyRainbowMode(rainbowModeOn);
     });
 
     document.getElementById('btn-clear-history').addEventListener('click', () => {
@@ -324,14 +479,12 @@ function runSplash() {
     const splash = document.getElementById('splash-screen');
     const bar = document.getElementById('splash-bar');
     const statusEl = document.getElementById('splash-status');
-
     const steps = [
         { pct: 20, label: 'Initializing...' },
         { pct: 50, label: 'Loading settings...' },
         { pct: 80, label: 'Connecting...' },
         { pct: 100, label: 'Ready.' }
     ];
-
     let i = 0;
     const tick = setInterval(() => {
         if (i >= steps.length) {
@@ -354,7 +507,23 @@ function runSplash() {
 }
 
 function showWelcomeScreen() {
-    document.getElementById('welcome-screen').style.display = 'flex';
+    const screen = document.getElementById('welcome-screen');
+    screen.style.display = 'flex';
+
+    const skipBtn = document.getElementById('btn-skip-tour');
+    const countdownEl = document.getElementById('skip-countdown');
+
+    let secs = 10;
+    const countdown = setInterval(() => {
+        secs--;
+        if (secs <= 0) {
+            clearInterval(countdown);
+            skipBtn.disabled = false;
+            skipBtn.innerHTML = 'Skip';
+        } else {
+            countdownEl.textContent = secs;
+        }
+    }, 1000);
 }
 
 function hideWelcomeScreen() {
@@ -390,10 +559,9 @@ function showTourStep(idx) {
         highlight.style.display = 'block';
 
         const tipW = 320;
-        const tipH = 140;
+        const tipH = 148;
         let tipTop = rect.bottom + 16;
         let tipLeft = rect.left;
-
         if (tipTop + tipH > window.innerHeight) tipTop = rect.top - tipH - 16;
         if (tipLeft + tipW > window.innerWidth) tipLeft = window.innerWidth - tipW - 16;
         if (tipLeft < 8) tipLeft = 8;
@@ -401,7 +569,6 @@ function showTourStep(idx) {
         tooltip.style.top = tipTop + 'px';
         tooltip.style.left = tipLeft + 'px';
     }
-
     tooltip.style.display = 'block';
 }
 
@@ -428,12 +595,10 @@ function completeTour() {
 function renderHistory(list) {
     const container = document.getElementById('history-list');
     container.innerHTML = '';
-
     if (!list || list.length === 0) {
         container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">No download history.</p>';
         return;
     }
-
     list.forEach(entry => {
         const date = new Date(entry.DownloadDate).toLocaleString();
         const item = document.createElement('div');
@@ -501,11 +666,7 @@ function showModal(title, message, type, confirmCallback, inputText) {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn-primary';
         copyBtn.textContent = 'Copy Path';
-        copyBtn.onclick = () => {
-            inputEl.select();
-            document.execCommand('copy');
-            closeModal();
-        };
+        copyBtn.onclick = () => { inputEl.select(); document.execCommand('copy'); closeModal(); };
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn-secondary';
@@ -584,10 +745,7 @@ function renderQueue() {
             const removeBtn = document.createElement('button');
             removeBtn.className = 'queue-item-remove';
             removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            removeBtn.onclick = () => {
-                downloadQueue.splice(idx, 1);
-                renderQueue();
-            };
+            removeBtn.onclick = () => { downloadQueue.splice(idx, 1); renderQueue(); };
             el.appendChild(removeBtn);
         }
 

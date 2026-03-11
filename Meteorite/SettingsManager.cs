@@ -8,7 +8,11 @@ namespace Meteorite
     {
         public string DownloadPath { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Meteorite");
         public string Theme { get; set; } = "dark";
+        public string AccentColor { get; set; } = "#BEF837";
+        public bool RainbowMode { get; set; } = false;
         public bool AutoDownloader { get; set; } = false;
+        public bool SidebarCollapsed { get; set; } = false;
+        public bool EasterEggUnlocked { get; set; } = false;
     }
 
     public static class SettingsManager
