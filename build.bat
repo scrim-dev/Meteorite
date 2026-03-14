@@ -33,6 +33,7 @@ goto menu
 :release
 echo Building Release...
 dotnet build -c Release
+iscc "Meteorite.Installer\src\InstallerScript.iss"
 pause
 cls
 goto menu

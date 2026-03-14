@@ -51,3 +51,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Others
+Meteorite.Installer/out
