@@ -2,6 +2,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,8 +13,18 @@ namespace Meteorite
 {
     internal class Program
     {
-        public const string VERSION = "0.0.0";
+        public const string VERSION = "0.1.0";
+
+        public const string VERSION_URL = "https://test.scrim.dev/app.version";
+
+        public const int UPDATE_SNOOZE_DAYS = 3;
+
         public static PhotinoWindow? MainWindow { get; private set; }
+
+        private static readonly HttpClient Http = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(8)
+        };
 
         [STAThread]
         static void Main()
@@ -21,11 +32,11 @@ namespace Meteorite
             SettingsManager.Load();
             HistoryManager.Load();
             MainWindow = new PhotinoWindow()
-                .SetTitle("Meteorite App")
+                .SetTitle("Meteorite")
                 .SetUseOsDefaultSize(false)
                 .SetSize(new Size(900, 600))
                 .SetMinSize(900, 600)
-                .Center().SetDevToolsEnabled(false).SetContextMenuEnabled(false).SetIconFile("GUI\\icon.ico")
+                .Center().SetDevToolsEnabled(false).SetContextMenuEnabled(false).SetIconFile("GUI\\logo.ico")
                 .SetMediaAutoplayEnabled(true)
                 .SetResizable(true)
                 .RegisterWebMessageReceivedHandler((object sender, string message) =>
@@ -33,7 +44,7 @@ namespace Meteorite
                     PhotinoListener.Listen((PhotinoWindow)sender, message);
                 })
                 .Load("GUI\\App.html");
-            
+
             MainWindow.WaitForClose();
         }
 
@@ -80,6 +91,37 @@ namespace Meteorite
                 return string.Empty;
             }
         }
+
+        public static async Task CheckForUpdateAsync(PhotinoWindow window)
+        {
+            // Respect snooze window
+            var snoozeUntil = SettingsManager.Current.UpdateSnoozeUntil;
+            if (snoozeUntil.HasValue && DateTime.UtcNow < snoozeUntil.Value)
+            {
+                Send(window, "update_not_needed", null);
+                return;
+            }
+
+            try
+            {
+                string remoteVersion = (await Http.GetStringAsync(VERSION_URL)).Trim();
+                if (!string.Equals(remoteVersion, VERSION, StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.Log($"Update available: current={VERSION}, latest={remoteVersion}", "INFO");
+                    Send(window, "update_available", new { currentVersion = VERSION, latestVersion = remoteVersion });
+                }
+                else
+                {
+                    Send(window, "update_not_needed", null);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Silently ignore — network may be unavailable
+                Logger.Log($"Update check failed: {ex.Message}", "DEBUG");
+                Send(window, "update_not_needed", null);
+            }
+        }
     }
 
     public static class PhotinoListener
@@ -111,6 +153,7 @@ namespace Meteorite
                     SettingsManager.Current.AutoDownloader = newSettings.AutoDownloader;
                     SettingsManager.Current.SidebarCollapsed = newSettings.SidebarCollapsed;
                     SettingsManager.Current.EasterEggUnlocked = newSettings.EasterEggUnlocked;
+                    SettingsManager.Current.SmoothScrolling = newSettings.SmoothScrolling;
                     SettingsManager.Save();
                     Logger.Log("Settings saved successfully.", "INFO");
                     Program.Send(window, "settings_saved", null);
@@ -154,6 +197,12 @@ namespace Meteorite
                 string path = req["data"]?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(path))
                     System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\"");
+            }
+            else if (action == "open_url")
+            {
+                string url = req["data"]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(url))
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = url, UseShellExecute = true });
             }
             else if (action == "play_video")
             {
@@ -238,6 +287,16 @@ namespace Meteorite
                 string tourFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tour.json");
                 try { File.WriteAllText(tourFile, Newtonsoft.Json.JsonConvert.SerializeObject(new { shown = true })); } catch { }
             }
+            else if (action == "check_update")
+            {
+                Task.Run(async () => await Program.CheckForUpdateAsync(window));
+            }
+            else if (action == "snooze_update")
+            {
+                SettingsManager.Current.UpdateSnoozeUntil = DateTime.UtcNow.AddDays(Program.UPDATE_SNOOZE_DAYS);
+                SettingsManager.Save();
+                Logger.Log($"Update snoozed for {Program.UPDATE_SNOOZE_DAYS} days.", "INFO");
+            }
         }
     }
 
@@ -253,7 +312,7 @@ namespace Meteorite
                 File.AppendAllText(LogFile, formatted + Environment.NewLine);
             }
             catch { }
-            
+
             if (Program.MainWindow != null)
             {
                 Program.Send(Program.MainWindow, "app_log", new { level, message, time = DateTime.Now.ToString("HH:mm:ss") });

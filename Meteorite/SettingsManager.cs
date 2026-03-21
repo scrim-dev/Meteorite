@@ -13,6 +13,13 @@ namespace Meteorite
         public bool AutoDownloader { get; set; } = false;
         public bool SidebarCollapsed { get; set; } = false;
         public bool EasterEggUnlocked { get; set; } = false;
+        public bool SmoothScrolling { get; set; } = true;
+
+        /// <summary>
+        /// UTC datetime until which the update prompt is snoozed.
+        /// Null means no active snooze.
+        /// </summary>
+        public DateTime? UpdateSnoozeUntil { get; set; } = null;
     }
 
     public static class SettingsManager

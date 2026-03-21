@@ -10,6 +10,7 @@ let queueRunning = false;
 let selectedTheme = 'dark';
 let selectedAccent = '#BEF837';
 let rainbowModeOn = false;
+let smoothScrollingOn = true;
 let tourStep = 0;
 let sidebarCollapsed = false;
 let easterEggUnlocked = false;
@@ -39,7 +40,7 @@ const TOUR_STEPS = [
     {
         target: 'nav-settings',
         title: 'Settings',
-        text: 'Set your download folder, monitor clipboard, and pick colors. Pst... I heard clicking this 10 times unlocks a hidden surprise. Watch the indicator!'
+        text: 'Set your download folder, monitor clipboard, and pick colors. Pst... I heard clicking this 10 times unlocks a hidden surprise. Watch the spinning star!'
     },
     {
         target: 'nav-applogs',
@@ -72,12 +73,14 @@ function handleBackendMessage(type, data) {
         selectedTheme = data.Theme || 'dark';
         selectedAccent = data.AccentColor || '#BEF837';
         rainbowModeOn = !!data.RainbowMode;
+        smoothScrollingOn = data.SmoothScrolling !== false; // default true
         sidebarCollapsed = !!data.SidebarCollapsed;
         easterEggUnlocked = !!data.EasterEggUnlocked;
 
         applyTheme(selectedTheme);
         applyAccent(selectedAccent);
         applyRainbowMode(rainbowModeOn);
+        applySmoothScrolling(smoothScrollingOn);
         applySidebarState(sidebarCollapsed);
         applyEasterEggState(easterEggUnlocked);
 
@@ -123,6 +126,15 @@ function handleBackendMessage(type, data) {
     }
     if (type === 'tour_state') {
         if (!data.shown) showWelcomeScreen();
+        return;
+    }
+    if (type === 'update_available') {
+        showUpdateModal(data.currentVersion, data.latestVersion);
+        return;
+    }
+    if (type === 'update_not_needed') {
+        // Nothing to do — silently pass
+        return;
     }
 }
 
@@ -146,6 +158,10 @@ function applyRainbowMode(on) {
     document.body.classList.toggle('rainbow-mode', on);
 }
 
+function applySmoothScrolling(on) {
+    document.documentElement.classList.toggle('no-smooth-scroll', !on);
+}
+
 function applySidebarState(collapsed) {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('collapsed', collapsed);
@@ -153,6 +169,12 @@ function applySidebarState(collapsed) {
 
 function applyEasterEggState(unlocked) {
     document.getElementById('rainbow-setting').style.display = unlocked ? 'block' : 'none';
+    if (unlocked) {
+        // Hide the indicator permanently once unlocked
+        const indicator = document.getElementById('egg-indicator');
+        indicator.style.opacity = '0';
+        indicator.classList.remove('spinning');
+    }
 }
 
 function syncSettingsUI() {
@@ -164,6 +186,9 @@ function syncSettingsUI() {
     });
     const rainbowCheck = document.getElementById('rainbow-mode');
     if (rainbowCheck) rainbowCheck.checked = rainbowModeOn;
+
+    const smoothCheck = document.getElementById('smooth-scrolling');
+    if (smoothCheck) smoothCheck.checked = smoothScrollingOn;
 }
 
 function saveCurrentSettings() {
@@ -174,7 +199,8 @@ function saveCurrentSettings() {
         RainbowMode: rainbowModeOn,
         AutoDownloader: document.getElementById('auto-downloader').checked,
         SidebarCollapsed: sidebarCollapsed,
-        EasterEggUnlocked: easterEggUnlocked
+        EasterEggUnlocked: easterEggUnlocked,
+        SmoothScrolling: smoothScrollingOn
     });
 }
 
@@ -317,15 +343,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabId === 'settings' && !easterEggUnlocked) {
                 settingsClickCount++;
                 const indicator = document.getElementById('egg-indicator');
-                indicator.classList.add('hinting');
-                indicator.style.opacity = (settingsClickCount / 10).toString();
-                indicator.style.transform = `scale(${0.5 + (settingsClickCount / 10) * 0.5})`;
+
+                // Show the spinning star immediately on first click; grow opacity with each click
+                indicator.classList.add('spinning');
+                indicator.style.opacity = Math.min(settingsClickCount / 10, 1).toString();
 
                 if (settingsClickCount >= 10) {
                     easterEggUnlocked = true;
                     applyEasterEggState(true);
-                    indicator.classList.remove('hinting');
-                    indicator.style.opacity = '0';
                     showModal('Easter Egg Unlocked!', 'You\'ve unlocked the secret Rainbow Mode in Settings! ✦', 'alert');
                     saveCurrentSettings();
                 }
@@ -345,6 +370,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-settings').addEventListener('click', () => {
         selectedTheme = document.querySelector('.theme-btn.active')?.getAttribute('data-theme') || 'dark';
         rainbowModeOn = document.getElementById('rainbow-mode').checked;
+        smoothScrollingOn = document.getElementById('smooth-scrolling').checked;
+        applySmoothScrolling(smoothScrollingOn);
         saveCurrentSettings();
         applyTheme(selectedTheme);
         applyAccent(selectedAccent);
@@ -425,6 +452,11 @@ document.addEventListener('DOMContentLoaded', () => {
         applyRainbowMode(rainbowModeOn);
     });
 
+    document.getElementById('smooth-scrolling').addEventListener('change', e => {
+        smoothScrollingOn = e.target.checked;
+        applySmoothScrolling(smoothScrollingOn);
+    });
+
     document.getElementById('btn-clear-history').addEventListener('click', () => {
         showModal('Clear History', 'Are you sure you want to clear all download history?', 'confirm', () => {
             sendMessageToBackend('clear_history');
@@ -473,6 +505,16 @@ document.addEventListener('DOMContentLoaded', () => {
         endTour();
         completeTour();
     });
+
+    // Update modal buttons
+    document.getElementById('btn-update-now').addEventListener('click', () => {
+        sendMessageToBackend('open_url', 'https://github.com/scrim-dev/Meteorite/releases');
+        document.getElementById('update-modal').style.display = 'none';
+    });
+    document.getElementById('btn-update-later').addEventListener('click', () => {
+        sendMessageToBackend('snooze_update');
+        document.getElementById('update-modal').style.display = 'none';
+    });
 });
 
 function runSplash() {
@@ -496,6 +538,7 @@ function runSplash() {
                     sendMessageToBackend('ui_ready');
                     sendMessageToBackend('get_settings');
                     sendMessageToBackend('check_tour');
+                    sendMessageToBackend('check_update');
                 }, 500);
             }, 400);
             return;
@@ -536,6 +579,11 @@ function startTour() {
     showTourStep(tourStep);
 }
 
+/**
+ * showTourStep — scrolls the target element into view first, then
+ * positions the highlight box and tooltip over it.
+ * Uses a short delay after scrollIntoView so the layout has settled.
+ */
 function showTourStep(idx) {
     const step = TOUR_STEPS[idx];
     const targetEl = document.getElementById(step.target);
@@ -549,27 +597,42 @@ function showTourStep(idx) {
         ? '<i class="fa-solid fa-check"></i> Done'
         : 'Next <i class="fa-solid fa-arrow-right"></i>';
 
-    if (targetEl) {
+    if (!targetEl) {
+        tooltip.style.display = 'block';
+        return;
+    }
+
+    // Scroll target into view, then position after animation settles
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+
+    const positionOverlay = () => {
         const rect = targetEl.getBoundingClientRect();
         const pad = 8;
-        highlight.style.top = (rect.top - pad) + 'px';
-        highlight.style.left = (rect.left - pad) + 'px';
-        highlight.style.width = (rect.width + pad * 2) + 'px';
+        highlight.style.top    = (rect.top  - pad) + 'px';
+        highlight.style.left   = (rect.left - pad) + 'px';
+        highlight.style.width  = (rect.width  + pad * 2) + 'px';
         highlight.style.height = (rect.height + pad * 2) + 'px';
         highlight.style.display = 'block';
 
         const tipW = 320;
-        const tipH = 148;
-        let tipTop = rect.bottom + 16;
+        const tipH = 160;
+        let tipTop  = rect.bottom + 16;
         let tipLeft = rect.left;
-        if (tipTop + tipH > window.innerHeight) tipTop = rect.top - tipH - 16;
-        if (tipLeft + tipW > window.innerWidth) tipLeft = window.innerWidth - tipW - 16;
+        if (tipTop + tipH > window.innerHeight)  tipTop  = rect.top - tipH - 16;
+        if (tipLeft + tipW > window.innerWidth)   tipLeft = window.innerWidth - tipW - 16;
         if (tipLeft < 8) tipLeft = 8;
+        if (tipTop  < 8) tipTop  = 8;
 
-        tooltip.style.top = tipTop + 'px';
+        tooltip.style.top  = tipTop  + 'px';
         tooltip.style.left = tipLeft + 'px';
-    }
-    tooltip.style.display = 'block';
+        tooltip.style.display = 'block';
+    };
+
+    // Wait for scroll animation (smooth scroll can take ~300-400ms)
+    // Use requestAnimationFrame + setTimeout to ensure layout is complete
+    requestAnimationFrame(() => {
+        setTimeout(positionOverlay, 350);
+    });
 }
 
 function tourNext() {
@@ -590,6 +653,12 @@ function endTour() {
 
 function completeTour() {
     sendMessageToBackend('tour_done');
+}
+
+function showUpdateModal(currentVersion, latestVersion) {
+    document.getElementById('update-current-badge').textContent = `Current: ${currentVersion}`;
+    document.getElementById('update-latest-badge').textContent = `Latest: ${latestVersion}`;
+    document.getElementById('update-modal').style.display = 'flex';
 }
 
 function renderHistory(list) {

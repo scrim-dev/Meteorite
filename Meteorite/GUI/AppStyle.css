@@ -59,6 +59,14 @@ body.theme-light {
     font-family: 'Inter', sans-serif;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
+html.no-smooth-scroll {
+    scroll-behavior: auto;
+}
+
 html,
 body {
     width: 100%;
@@ -159,6 +167,7 @@ input[type="checkbox"] {
     gap: 10px;
     color: var(--text-muted);
     border: 1px solid transparent;
+    position: relative;
 }
 
 .nav-item:hover {
@@ -195,6 +204,11 @@ input[type="checkbox"] {
     overflow-y: auto;
     padding: 20px 24px;
     height: 100%;
+    scroll-behavior: smooth;
+}
+
+html.no-smooth-scroll .view {
+    scroll-behavior: auto;
 }
 
 .view.active {
@@ -998,6 +1012,52 @@ input:checked+.slider:before {
     color: var(--text-muted);
 }
 
+/* Update modal specific styles */
+.update-modal-card {
+    max-width: 400px;
+    border-color: var(--border-accent);
+}
+
+.update-modal-icon {
+    font-size: 2.4rem;
+    color: var(--accent);
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 12px var(--accent-glow));
+    animation: float 3s ease-in-out infinite;
+}
+
+.update-version-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.update-version-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.update-version-badge.current {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.update-version-badge.latest {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+}
+
+.update-arrow {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
 .splash {
     position: fixed;
     inset: 0;
@@ -1133,6 +1193,7 @@ input:checked+.slider:before {
     justify-content: center;
 }
 
+/* Tour overlay */
 #tour-overlay {
     position: fixed;
     inset: 0;
@@ -1145,7 +1206,10 @@ input:checked+.slider:before {
     border: 2px solid var(--accent);
     border-radius: 10px;
     box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.65), 0 0 20px var(--accent-glow);
-    transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: top 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+                left 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+                width 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+                height 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
     pointer-events: none;
     z-index: 99991;
 }
@@ -1468,26 +1532,32 @@ body.rainbow-mode {
     transform: rotate(180deg);
 }
 
-/* Egg Indicator */
+/* Easter Egg — spinning star indicator on the Settings tab */
 .egg-indicator {
-    position: absolute;
-    right: 12px;
-    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    font-size: 11px;
     color: var(--accent);
     opacity: 0;
-    transition: opacity 0.3s, transform 0.3s;
-    transform: scale(0.5);
     pointer-events: none;
+    /* Hidden by default — shown progressively via JS opacity */
+    filter: drop-shadow(0 0 4px var(--accent-glow));
 }
 
+.egg-indicator.spinning {
+    animation: eggSpin 4s linear infinite;
+}
+
+@keyframes eggSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Hide egg indicator when sidebar is collapsed (no space) */
 .sidebar.collapsed .egg-indicator {
-    top: 6px;
-    right: 18px;
-}
-
-.nav-item:hover .egg-indicator.hinting {
-    opacity: 1;
-    transform: scale(1);
+    display: none;
 }
 
 .egg-badge {

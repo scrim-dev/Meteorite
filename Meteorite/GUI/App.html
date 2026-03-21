@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -199,6 +199,13 @@
                             </label>
                         </div>
                         <div class="setting-item">
+                            <label>Smooth Scrolling</label>
+                            <label class="switch">
+                                <input type="checkbox" id="smooth-scrolling" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
                             <label>Theme</label>
                             <div class="theme-selector" id="theme-selector">
                                 <button class="theme-btn active" data-theme="dark"><i class="fa-solid fa-moon"></i>
@@ -301,6 +308,7 @@
         </main>
     </div>
 
+    <!-- General purpose modal -->
     <div id="custom-modal" class="modal-overlay" style="display:none;">
         <div class="modal-card">
             <h3 id="modal-title"></h3>
@@ -312,6 +320,7 @@
         </div>
     </div>
 
+    <!-- Custom color picker modal -->
     <div id="color-picker-modal" class="modal-overlay" style="display:none;">
         <div class="modal-card color-picker-card">
             <h3>Accent Color</h3>
@@ -342,6 +351,24 @@
             <div class="modal-buttons">
                 <button class="btn-primary" id="cp-confirm">Apply</button>
                 <button class="btn-secondary" id="cp-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update available modal -->
+    <div id="update-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card update-modal-card">
+            <div class="update-modal-icon"><i class="fa-solid fa-circle-up"></i></div>
+            <h3>Version Mismatch</h3>
+            <p id="update-modal-message">A newer version of Meteorite is available. Update to the latest for new features and fixes.</p>
+            <div class="update-version-row">
+                <span class="update-version-badge current" id="update-current-badge">Current: —</span>
+                <i class="fa-solid fa-arrow-right update-arrow"></i>
+                <span class="update-version-badge latest" id="update-latest-badge">Latest: —</span>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" id="btn-update-now"><i class="fa-solid fa-circle-up"></i> Update Now</button>
+                <button class="btn-secondary" id="btn-update-later">Later</button>
             </div>
         </div>
     </div>
