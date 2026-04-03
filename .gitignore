@@ -54,3 +54,4 @@ nunit-*.xml
 
 # Others
 Meteorite.Installer/out
+.vs/
