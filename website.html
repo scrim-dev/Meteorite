@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-oz3TSlghIYwZu5HNT9V6VcLtO7rZbO/sfUylm6cWyPk=' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; script-src 'sha256-6yjCcDWtvIK/6y33k5fMz36Cbj9zJQmFY5XTv/QVgBQ='; img-src 'self' data: https:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <title>Meteorite - Medal.tv Clip Downloader</title>
+    <meta name="description" content="Download Medal.tv clips without watermarks. Free, fast, and open source.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+    <style>
+        :root {
+            --bg: #161617;
+            --bg-panel: #1e1e20;
+            --bg-card: #242428;
+            --bg-hover: #2a2a2e;
+            --border: rgba(255, 255, 255, 0.07);
+            --border-accent: rgba(190, 248, 55, 0.35);
+            --accent: #BEF837;
+            --accent-dim: rgba(190, 248, 55, 0.15);
+            --accent-glow: rgba(190, 248, 55, 0.45);
+            --text: #e8e8f0;
+            --text-muted: #6b6b80;
+            --text-dim: #9090a8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* top bar */
+        .topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 16px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(22, 22, 23, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            transition: box-shadow 0.3s;
+        }
+
+        .topbar.scrolled { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4); }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .topbar-icon {
+            width: 34px; height: 34px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 15px;
+        }
+
+        .topbar-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.3px;
+        }
+
+        .topbar-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-link {
+            padding: 8px 16px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.15s, background 0.15s;
+            border: 1.5px solid transparent;
+        }
+
+        .topbar-link:hover {
+            color: var(--text);
+            background: var(--bg-hover);
+        }
+
+        .topbar-link.dl {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .topbar-link.dl:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+      
+        .landingpage {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .landing-glow {
+            position: absolute;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(190, 248, 55, 0.08) 0%, transparent 70%);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .landing-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: var(--accent-dim);
+            border: 1px solid var(--border-accent);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .landing-meteor {
+            font-size: 4.5rem;
+            color: var(--accent);
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 24px var(--accent-glow));
+            animation: bob 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .landingpage h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+            position: relative;
+        }
+
+        .landingpage h1 .hl { color: var(--accent); }
+
+        .landing-desc {
+            font-size: clamp(1rem, 2vw, 1.15rem);
+            color: var(--text-muted);
+            max-width: 520px;
+            margin-bottom: 36px;
+            position: relative;
+        }
+
+        .landing-btns {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1.5px solid transparent;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-green {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .btn-green:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .btn-ghost {
+            border-color: var(--border-accent);
+            color: var(--text-dim);
+            background: transparent;
+        }
+
+        .btn-ghost:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        
+        .block {
+            padding: 100px 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .block-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .block-title {
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .block-desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin-bottom: 48px;
+        }
+
+      
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 24px;
+            transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            background: var(--accent-dim);
+            border: 1px solid var(--border-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        
+        .showcase { text-align: center; }
+
+        .window {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-accent);
+            background: var(--bg-panel);
+            box-shadow: 0 24px 80px rgba(190, 248, 55, 0.06), 0 0 0 1px var(--border);
+        }
+
+        .window-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .window-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--bg-hover);
+        }
+
+        .window-dot:nth-child(1) { background: #ff5f57; }
+        .window-dot:nth-child(2) { background: #febc2e; }
+        .window-dot:nth-child(3) { background: #28c840; }
+
+        .window-bar span {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .window-content {
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 380px;
+            background:
+                radial-gradient(circle at 30% 40%, rgba(190, 248, 55, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(190, 248, 55, 0.02) 0%, transparent 50%);
+        }
+
+        .window-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            color: var(--text-muted);
+        }
+
+        .window-empty i {
+            font-size: 3rem;
+            color: var(--accent);
+            opacity: 0.5;
+        }
+
+        .window-empty p { font-size: 14px; }
+
+        .window-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        
+        .grab {
+            text-align: center;
+            padding: 80px 24px 100px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .grab-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-accent);
+            border-radius: 16px;
+            padding: 56px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .grab-glow {
+            position: absolute;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(190, 248, 55, 0.06) 0%, transparent 70%);
+            top: -100px; right: -100px;
+            pointer-events: none;
+        }
+
+        .grab-box h2 {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .grab-box p {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .grab-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        .ver {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--accent-dim);
+            border: 1px solid var(--border-accent);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-top: 20px;
+            position: relative;
+        }
+
+       
+        .ft {
+            border-top: 1px solid var(--border);
+            padding: 32px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .ft-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .ft-brand i { color: var(--accent); }
+
+        .ft-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .ft-link {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ft-link:hover { color: var(--accent); }
+
+        
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #type-target { min-height: 1.2em; }
+
+        .typing-cursor::after {
+            content: '|';
+            color: var(--accent);
+            animation: blink 0.6s step-end infinite;
+            margin-left: 2px;
+        }
+
+        .typing-done::after { display: none; }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .topbar { padding: 14px 20px; }
+            .topbar-links .topbar-link:not(.dl) { display: none; }
+            .landingpage { padding: 100px 20px 60px; }
+            .block { padding: 60px 20px; }
+            .grab { padding: 40px 20px 60px; }
+            .grab-box { padding: 40px 24px; }
+            .window-content { min-height: 240px; padding: 24px; }
+            .ft { padding: 24px 20px; flex-direction: column; text-align: center; }
+            .ft-links { justify-content: center; }
+        }
+
+        @media (max-width: 480px) {
+            .landing-btns { flex-direction: column; align-items: center; }
+            .btn { width: 100%; max-width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="topbar" id="topbar">
+        <a class="topbar-brand" href="#">
+            <div class="topbar-icon"><i class="fa-solid fa-meteor"></i></div>
+            <span class="topbar-name">Meteorite</span>
+        </a>
+        <div class="topbar-links">
+            <a class="topbar-link" href="#features">Features</a>
+            <a class="topbar-link" href="#preview">Preview</a>
+            <a class="topbar-link dl" href="https://github.com/scrim-dev/Meteorite/releases" rel="noopener noreferrer" target="_blank">
+                <i class="fa-solid fa-download"></i> Download
+            </a>
+        </div>
+    </nav>
+
+    <section class="landingpage">
+        <div class="landing-glow"></div>
+        <div class="landing-tag">
+            <i class="fa-solid fa-code-branch"></i> Open Source
+        </div>
+        <div class="landing-meteor"><i class="fa-solid fa-meteor"></i></div>
+        <h1>Grab your Medal clips.<br><span class="hl">No watermark.</span></h1>
+        <p class="landing-desc">Meteorite lets you download clips from Medal.tv without the watermark! It's free as fuck, it's open source, and it just works. Paste a link, hit download, done.</p>
+        <div class="landing-btns">
+            <a class="btn btn-green" href="https://github.com/scrim-dev/Meteorite/releases" rel="noopener noreferrer" target="_blank">
+                <i class="fa-solid fa-download"></i> Download for Windows
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/scrim-dev/Meteorite" rel="noopener noreferrer" target="_blank">
+                <i class="fa-brands fa-github"></i> Source Code
+            </a>
+        </div>
+    </section>
+
+    <section class="block" id="features">
+        <div class="reveal">
+            <div class="block-label"><i class="fa-solid fa-bolt"></i> What it offers</div>
+            <h2 class="block-title">Simple clip downloader, no bloat.</h2>
+            <p class="block-desc">Paste a Medal link, get the video. That's basically it. But there's a few nice things on top.</p>
+        </div>
+        <div class="cards">
+            <div class="card reveal">
+                <div class="card-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                <h3>Quick Downloads</h3>
+                <p>Paste a Medal.tv link and the clip downloads straight to your PC. No accounts, no signups.</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon"><i class="fa-solid fa-eye-slash"></i></div>
+                <h3>Watermark Free</h3>
+                <p>You get the raw video, not the one with the Medal branding stamped on it.</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <h3>Download History</h3>
+                <p>Keeps track of what you've grabbed so you can find, rewatch, or open clips later.</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                <h3>Auto Download</h3>
+                <p>Turn it on and it watches your clipboard. Copy a Medal link and it starts downloading on its own.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="block showcase" id="preview">
+        <div class="reveal">
+            <div class="block-label"><i class="fa-solid fa-image"></i> Preview</div>
+            <h2 class="block-title" id="type-target" data-text="What meteorite looks like"></h2>
+            <p class="block-desc" style="margin-left:auto;margin-right:auto;"></p>
+        </div>
+        <div class="window reveal">
+            <div class="window-content" style="padding:0;">
+                <img class="window-img" src="Showcase/screenshot.png" alt="Meteorite app screenshot">
+            </div>
+        </div>
+    </section>
+
+    <section class="grab">
+        <div class="grab-box reveal">
+            <div class="grab-glow"></div>
+            <h2>Give it a shot</h2>
+            <p>It's free and takes like 10 seconds to set up. Worst case you don't like it.</p>
+            <div class="grab-btns">
+                <a class="btn btn-green" href="https://github.com/scrim-dev/Meteorite/releases" rel="noopener noreferrer" target="_blank">
+                    <i class="fa-solid fa-download"></i> Get Meteorite
+                </a>
+                <a class="btn btn-ghost" href="https://discord.gg/5fc2BWuFWU" rel="noopener noreferrer" target="_blank">
+                    <i class="fa-brands fa-discord"></i> Discord
+                </a>
+            </div>
+            <div class="ver"><i class="fa-solid fa-tag"></i> v0.1.0 &mdash; still a work in progress</div>
+        </div>
+    </section>
+
+    <footer class="ft">
+        <div class="ft-brand">
+            <i class="fa-solid fa-meteor"></i>
+            Meteorite &copy; 2025 Scrim-Dev
+        </div>
+        <div class="ft-links">
+            <a class="ft-link" href="https://github.com/scrim-dev/Meteorite" rel="noopener noreferrer" target="_blank">
+                <i class="fa-brands fa-github"></i> GitHub
+            </a>
+            <a class="ft-link" href="https://discord.gg/5fc2BWuFWU" rel="noopener noreferrer" target="_blank">
+                <i class="fa-brands fa-discord"></i> Discord
+            </a>
+            <a class="ft-link" href="https://scrim.cc/" rel="noopener noreferrer" target="_blank">
+                <i class="fa-solid fa-globe"></i> scrim.cc
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        var bar = document.getElementById('topbar');
+        window.addEventListener('scroll', function () {
+            bar.classList.toggle('scrolled', window.scrollY > 10);
+        });
+
+        var obs = new IntersectionObserver(function (entries) {
+            for (var i = 0; i < entries.length; i++) {
+                if (entries[i].isIntersecting) {
+                    entries[i].target.classList.add('visible');
+                    obs.unobserve(entries[i].target);
+                }
+            }
+        }, { threshold: 0.15 });
+
+        var els = document.querySelectorAll('.reveal');
+        for (var i = 0; i < els.length; i++) obs.observe(els[i]);
+
+        // typing effect
+        var typeEl = document.getElementById('type-target');
+        var typeText = typeEl.getAttribute('data-text');
+        var typed = false;
+
+        function typeOut(el, text, speed) {
+            el.classList.add('typing-cursor');
+            el.textContent = '';
+            var idx = 0;
+            var timer = setInterval(function () {
+                el.textContent += text[idx];
+                idx++;
+                if (idx >= text.length) {
+                    clearInterval(timer);
+                    setTimeout(function () {
+                        el.classList.remove('typing-cursor');
+                        el.classList.add('typing-done');
+                    }, 600);
+                }
+            }, speed);
+        }
+
+        var typeParent = typeEl.closest('.reveal') || typeEl.parentElement;
+        var typeObs = new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting && !typed) {
+                typed = true;
+                typeOut(typeEl, typeText, 50);
+                typeObs.unobserve(typeParent);
+            }
+        }, { threshold: 0.1 });
+
+        typeObs.observe(typeParent);
+    </script>
+</body>
+</html>
