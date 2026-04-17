@@ -68,6 +68,10 @@
                     <span class="icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
                     <span class="nav-label">History</span>
                 </li>
+                <li class="nav-item" data-tab="videos" id="nav-videos" title="Videos">
+                    <span class="icon"><i class="fa-solid fa-film"></i></span>
+                    <span class="nav-label">Videos</span>
+                </li>
                 <li class="nav-item" data-tab="settings" id="nav-settings" title="Settings">
                     <span class="icon"><i class="fa-solid fa-gear"></i></span>
                     <span class="nav-label">Settings</span>
@@ -176,6 +180,118 @@
                         History</button>
                 </div>
                 <div id="history-list" class="history-grid"></div>
+            </section>
+
+            <section id="videos" class="view videos-view">
+                <div class="view-header">
+                    <div>
+                        <h1>Videos</h1>
+                        <p>Browse, watch and trim your Meteorite clips.</p>
+                    </div>
+                    <button id="btn-refresh-videos" class="btn-secondary"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                </div>
+
+                <div class="videos-layout">
+
+                    <!-- LEFT: Video Library -->
+                    <div class="video-library-panel">
+                        <div class="video-library-header">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span id="video-count-label">0 videos</span>
+                        </div>
+                        <div id="video-library" class="video-library">
+                            <div class="video-empty-state" id="video-empty-state">
+                                <i class="fa-solid fa-film"></i>
+                                <p>No videos found.</p>
+                                <span>Download some clips first, then hit Refresh.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Player + Trimmer -->
+                    <div class="video-player-panel" id="video-player-panel">
+
+                        <!-- No-selection placeholder -->
+                        <div class="vp-placeholder" id="vp-placeholder">
+                            <i class="fa-solid fa-circle-play"></i>
+                            <p>Select a video to watch</p>
+                        </div>
+
+                        <!-- Player (hidden until a video is selected) -->
+                        <div class="vp-active" id="vp-active" style="display:none;">
+
+                            <div class="vp-video-wrap">
+                                <video id="vp-video" preload="metadata"></video>
+                                <div class="vp-overlay-play" id="vp-overlay-play">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                            </div>
+
+                            <!-- Controls bar -->
+                            <div class="vp-controls">
+                                <button class="vp-btn" id="vp-play-btn" title="Play / Pause">
+                                    <i class="fa-solid fa-play" id="vp-play-icon"></i>
+                                </button>
+
+                                <span class="vp-time" id="vp-time-current">0:00</span>
+
+                                <div class="vp-seek-wrap">
+                                    <input type="range" class="vp-seek" id="vp-seek" min="0" max="1000" value="0" step="1">
+                                </div>
+
+                                <span class="vp-time" id="vp-time-total">0:00</span>
+
+                                <button class="vp-btn" id="vp-mute-btn" title="Mute">
+                                    <i class="fa-solid fa-volume-high" id="vp-vol-icon"></i>
+                                </button>
+
+                                <div class="vp-vol-wrap">
+                                    <input type="range" class="vp-vol" id="vp-vol" min="0" max="100" value="100" step="1">
+                                </div>
+
+                                <button class="vp-btn" id="vp-openfile-btn" title="Open file location">
+                                    <i class="fa-solid fa-folder-open"></i>
+                                </button>
+
+                                <button class="vp-btn" id="vp-fullscreen-btn" title="Fullscreen">
+                                    <i class="fa-solid fa-expand"></i>
+                                </button>
+                            </div>
+
+                            <!-- Trimmer panel -->
+                            <div class="vp-trimmer" id="vp-trimmer">
+                                <div class="vp-trimmer-header">
+                                    <span><i class="fa-solid fa-scissors"></i> Video Trimmer</span>
+                                    <span class="vp-trim-range-label" id="vp-trim-range-label">Full clip</span>
+                                </div>
+
+                                <div class="trim-timeline-wrap">
+                                    <!-- background track -->
+                                    <div class="trim-track" id="trim-track">
+                                        <div class="trim-selection" id="trim-selection"></div>
+                                    </div>
+                                    <!-- start handle -->
+                                    <input type="range" class="trim-handle trim-start" id="trim-start" min="0" max="1000" value="0" step="1">
+                                    <!-- end handle -->
+                                    <input type="range" class="trim-handle trim-end" id="trim-end" min="0" max="1000" value="1000" step="1">
+                                </div>
+
+                                <div class="trim-labels">
+                                    <span id="trim-start-label">Start: 0:00</span>
+                                    <span id="trim-end-label">End: 0:00</span>
+                                </div>
+
+                                <div class="trim-actions">
+                                    <button class="btn-secondary" id="btn-trim-preview"><i class="fa-solid fa-eye"></i> Preview Trim</button>
+                                    <button class="btn-primary" id="btn-trim-export"><i class="fa-solid fa-scissors"></i> Export Trim</button>
+                                </div>
+                                <div class="trim-export-status" id="trim-export-status"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
             </section>
 
             <section id="settings" class="view">
@@ -348,18 +464,17 @@
         </div>
     </div>
 
-    <!-- Update available modal -->
     <div id="update-modal" class="modal-overlay" style="display:none;">
         <div class="modal-card update-modal-card">
-            <div class="update-modal-icon"><i class="fa-solid fa-circle-up"></i></div>
-            <h3>Update Available</h3>
+            <div class="update-modal-icon" id="update-modal-icon"><i class="fa-solid fa-circle-up"></i></div>
+            <h3 id="update-modal-title">Update Available</h3>
             <p id="update-modal-message">A newer version of Meteorite is available. Update to get the latest features and fixes.</p>
             <div class="update-version-row">
                 <span class="update-version-badge current" id="update-current-badge">Current: ...</span>
                 <i class="fa-solid fa-arrow-right update-arrow"></i>
                 <span class="update-version-badge latest" id="update-latest-badge">Latest: ...</span>
             </div>
-            <div class="modal-buttons">
+            <div class="modal-buttons" id="update-modal-buttons">
                 <button class="btn-primary" id="btn-update-now"><i class="fa-solid fa-circle-up"></i> Update Now</button>
                 <button class="btn-secondary" id="btn-update-later">Skip for Now</button>
             </div>

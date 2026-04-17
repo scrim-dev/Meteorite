@@ -129,8 +129,17 @@ function handleBackendMessage(type, data) {
         showUpdateModal(data.currentVersion, data.latestVersion);
         return;
     }
+    if (type === 'beta_build') {
+        showBetaModal(data.currentVersion, data.latestVersion);
+        return;
+    }
     if (type === 'update_not_needed') {
         // Nothing to do - silently pass
+        return;
+    }
+    if (type === 'videos_data') {
+        videoList = data || [];
+        renderVideoLibrary(videoList);
         return;
     }
 }
@@ -357,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (tabId === 'history') sendMessageToBackend('get_history');
             if (tabId === 'settings') sendMessageToBackend('get_settings');
+            if (tabId === 'videos') loadVideosTab();
         });
     });
 
@@ -658,8 +668,34 @@ function completeTour() {
 }
 
 function showUpdateModal(currentVersion, latestVersion) {
+    document.getElementById('update-modal-title').textContent = 'Update Available';
+    document.getElementById('update-modal-message').textContent = 'A newer version of Meteorite is available. Update to get the latest features and fixes.';
     document.getElementById('update-current-badge').textContent = `Current: ${currentVersion}`;
     document.getElementById('update-latest-badge').textContent = `Latest: ${latestVersion}`;
+    
+    document.getElementById('btn-update-now').style.display = 'inline-flex';
+    document.getElementById('btn-update-later').innerHTML = 'Skip for Now';
+
+    const icon = document.querySelector('#update-modal-icon i');
+    if(icon) icon.className = 'fa-solid fa-circle-up';
+    document.getElementById('update-modal-icon').style.color = 'var(--accent)';
+
+    document.getElementById('update-modal').style.display = 'flex';
+}
+
+function showBetaModal(currentVersion, latestVersion) {
+    document.getElementById('update-modal-title').textContent = 'Early Access Build';
+    document.getElementById('update-modal-message').textContent = 'You are running an early access or beta build. Please be warned that there might be bugs or errors.';
+    document.getElementById('update-current-badge').textContent = `Beta: ${currentVersion}`;
+    document.getElementById('update-latest-badge').textContent = `Stable: ${latestVersion}`;
+    
+    document.getElementById('btn-update-now').style.display = 'none';
+    document.getElementById('btn-update-later').innerHTML = 'Acknowledge';
+
+    const icon = document.querySelector('#update-modal-icon i');
+    if(icon) icon.className = 'fa-solid fa-flask';
+    document.getElementById('update-modal-icon').style.color = 'var(--danger)';
+
     document.getElementById('update-modal').style.display = 'flex';
 }
 
@@ -907,3 +943,478 @@ function advanceQueue() {
     renderQueue();
     sendMessageToBackend('download', downloadQueue[nextIdx].url);
 }
+
+/* ============================================================
+   Videos Tab
+   ============================================================ */
+
+let videoList = [];
+let activeVideoEntry = null;
+let vpDuration = 0;
+let vpTrimStart = 0;
+let vpTrimEnd = 0;
+let trimRecorder = null;
+let trimChunks = [];
+
+// ---- Load videos from backend ----
+function loadVideosTab() {
+    sendMessageToBackend('get_videos');
+}
+
+// ---- Format seconds to M:SS ----
+function fmtTime(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+// ---- Render library cards ----
+function renderVideoLibrary(list) {
+    const lib = document.getElementById('video-library');
+    const empty = document.getElementById('video-empty-state');
+    const countLbl = document.getElementById('video-count-label');
+
+    // Remove old cards (keep empty state node)
+    Array.from(lib.children).forEach(c => { if (c !== empty) c.remove(); });
+
+    if (!list || list.length === 0) {
+        empty.style.display = 'flex';
+        countLbl.textContent = '0 videos';
+        return;
+    }
+
+    empty.style.display = 'none';
+    countLbl.textContent = `${list.length} video${list.length !== 1 ? 's' : ''}`;
+
+    list.forEach(v => {
+        const vName = v.name || v.Name || 'Unknown Video';
+        const vPath = v.path || v.Path || '';
+        const vSize = v.size || v.Size;
+        const vMod = v.modified || v.Modified;
+        const vFullPath = v.fullPath || v.FullPath || '';
+
+        const safeV = { name: vName, path: vPath, size: vSize, modified: vMod, fullPath: vFullPath };
+
+        const card = document.createElement('div');
+        card.className = 'video-card' + (activeVideoEntry && activeVideoEntry.path === safeV.path ? ' active' : '');
+        card.dataset.path = safeV.path;
+
+        const sizeMB = safeV.size ? (safeV.size / 1048576).toFixed(1) + ' MB' : '';
+        const modDate = safeV.modified ? new Date(safeV.modified).toLocaleDateString() : '';
+
+        // Left Icon
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'video-list-icon';
+        const iconEl = document.createElement('i');
+        iconEl.className = 'fa-solid fa-file-video';
+        iconContainer.appendChild(iconEl);
+
+        // Details
+        const detailsContainer = document.createElement('div');
+        detailsContainer.className = 'video-card-info';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'video-card-name';
+        nameEl.textContent = safeV.name;
+        nameEl.title = safeV.name;
+
+        const metaEl = document.createElement('div');
+        metaEl.className = 'video-card-meta';
+
+        if (sizeMB) {
+            const sizeSpan = document.createElement('span');
+            sizeSpan.textContent = sizeMB;
+            metaEl.appendChild(sizeSpan);
+        }
+        if (sizeMB && modDate) {
+            const sep = document.createElement('span');
+            sep.textContent = '·';
+            metaEl.appendChild(sep);
+        }
+        if (modDate) {
+            const dateSpan = document.createElement('span');
+            dateSpan.textContent = modDate;
+            metaEl.appendChild(dateSpan);
+        }
+
+        detailsContainer.appendChild(nameEl);
+        detailsContainer.appendChild(metaEl);
+
+        card.appendChild(iconContainer);
+        card.appendChild(detailsContainer);
+
+        card.addEventListener('click', () => loadVideoInPlayer(safeV));
+        lib.appendChild(card);
+    });
+}
+
+// ---- Load a video into the player ----
+function loadVideoInPlayer(v) {
+    activeVideoEntry = v;
+
+    // Update active state on cards
+    document.querySelectorAll('.video-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.path === v.path);
+    });
+
+    // Show the player, hide placeholder
+    document.getElementById('vp-placeholder').style.display = 'none';
+    document.getElementById('vp-active').style.display = 'flex';
+
+    const vid = document.getElementById('vp-video');
+    vid.src = v.path;
+    vid.load();
+
+    // Reset controls
+    vpSetSeek(0);
+    document.getElementById('vp-time-current').textContent = '0:00';
+    document.getElementById('vp-time-total').textContent = '0:00';
+    setPlayIcon(false);
+
+    // Reset trim
+    vpTrimStart = 0;
+    vpTrimEnd = 0;
+    document.getElementById('trim-start').value = 0;
+    document.getElementById('trim-end').value = 1000;
+    updateTrimSelection();
+    document.getElementById('vp-trim-range-label').textContent = 'Full clip';
+    document.getElementById('trim-start-label').textContent = 'Start: 0:00';
+    document.getElementById('trim-end-label').textContent = 'End: 0:00';
+    document.getElementById('trim-export-status').textContent = '';
+    document.getElementById('trim-export-status').className = 'trim-export-status';
+}
+
+// ---- Player helpers ----
+function setPlayIcon(playing) {
+    const icon = document.getElementById('vp-play-icon');
+    if (!icon) return;
+    icon.className = playing ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+}
+
+function vpSetSeek(pct) {
+    const el = document.getElementById('vp-seek');
+    if (!el) return;
+    el.value = pct * 1000;
+    el.style.setProperty('--vp-fill', (pct * 100).toFixed(2) + '%');
+}
+
+function vpSetVol(pct) {
+    const el = document.getElementById('vp-vol');
+    if (!el) return;
+    el.value = pct * 100;
+    el.style.setProperty('--vp-fill', (pct * 100).toFixed(2) + '%');
+}
+
+function showOverlay(playing) {
+    const ov = document.getElementById('vp-overlay-play');
+    if (!ov) return;
+    const i = ov.querySelector('i');
+    if (i) i.className = playing ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+    ov.classList.remove('show');
+    void ov.offsetWidth; // reflow to restart animation
+    ov.classList.add('show');
+    setTimeout(() => ov.classList.remove('show'), 450);
+}
+
+// ---- Trim timeline helpers ----
+function updateTrimSelection() {
+    const track = document.getElementById('trim-track');
+    const sel = document.getElementById('trim-selection');
+    if (!track || !sel) return;
+
+    const s = parseInt(document.getElementById('trim-start').value, 10) / 1000;
+    const e = parseInt(document.getElementById('trim-end').value, 10) / 1000;
+    sel.style.left = (s * 100).toFixed(2) + '%';
+    sel.style.width = ((e - s) * 100).toFixed(2) + '%';
+
+    // Update time labels
+    const tStart = s * vpDuration;
+    const tEnd = e * vpDuration;
+    vpTrimStart = tStart;
+    vpTrimEnd = tEnd;
+
+    document.getElementById('trim-start-label').textContent = 'Start: ' + fmtTime(tStart);
+    document.getElementById('trim-end-label').textContent = 'End: ' + fmtTime(tEnd);
+
+    const dur = tEnd - tStart;
+    document.getElementById('vp-trim-range-label').textContent =
+        (dur < vpDuration - 0.5) ? `${fmtTime(tStart)} - ${fmtTime(tEnd)} (${fmtTime(dur)})` : 'Full clip';
+}
+
+// ---- Wire up player events after DOM ready ----
+document.addEventListener('DOMContentLoaded', () => {
+    const vid = document.getElementById('vp-video');
+    const seekEl = document.getElementById('vp-seek');
+    const volEl = document.getElementById('vp-vol');
+    const playBtn = document.getElementById('vp-play-btn');
+    const muteBtn = document.getElementById('vp-mute-btn');
+    const fsBtn = document.getElementById('vp-fullscreen-btn');
+    const openFileBtn = document.getElementById('vp-openfile-btn');
+
+    if (!vid) return;
+
+    // --- Video element events ---
+    vid.addEventListener('loadedmetadata', () => {
+        vpDuration = vid.duration || 0;
+        document.getElementById('vp-time-total').textContent = fmtTime(vpDuration);
+        document.getElementById('vp-time-current').textContent = '0:00';
+
+        // Reset trim handles to full clip
+        vpTrimStart = 0;
+        vpTrimEnd = vpDuration;
+        document.getElementById('trim-start').value = 0;
+        document.getElementById('trim-end').value = 1000;
+        updateTrimSelection();
+
+        vpSetVol(vid.volume);
+    });
+
+    vid.addEventListener('timeupdate', () => {
+        if (!vid.duration) return;
+        const pct = vid.currentTime / vid.duration;
+        vpSetSeek(pct);
+        document.getElementById('vp-time-current').textContent = fmtTime(vid.currentTime);
+    });
+
+    vid.addEventListener('ended', () => {
+        setPlayIcon(false);
+    });
+
+    vid.addEventListener('play', () => setPlayIcon(true));
+    vid.addEventListener('pause', () => setPlayIcon(false));
+
+    // --- Play / Pause ---
+    playBtn.addEventListener('click', () => {
+        const wasPaused = vid.paused;
+        if (wasPaused) { vid.play(); } else { vid.pause(); }
+        showOverlay(wasPaused);
+    });
+
+    // Click on video itself to toggle play
+    // Wrap element
+    const wrap = document.querySelector('.vp-video-wrap');
+    if (wrap) {
+        wrap.addEventListener('click', (e) => {
+            if (e.target === wrap || e.target === vid) {
+                const wasPaused = vid.paused;
+                if (wasPaused) { vid.play(); } else { vid.pause(); }
+                showOverlay(wasPaused);
+            }
+        });
+    }
+
+    // --- Seek ---
+    seekEl.addEventListener('input', () => {
+        if (!vid.duration) return;
+        const pct = parseInt(seekEl.value, 10) / 1000;
+        vid.currentTime = pct * vid.duration;
+        seekEl.style.setProperty('--vp-fill', (pct * 100).toFixed(2) + '%');
+    });
+
+    // --- Volume ---
+    volEl.addEventListener('input', () => {
+        const pct = parseInt(volEl.value, 10) / 100;
+        vid.volume = pct;
+        vid.muted = pct === 0;
+        volEl.style.setProperty('--vp-fill', (pct * 100).toFixed(2) + '%');
+        updateVolIcon();
+    });
+
+    // --- Mute toggle ---
+    muteBtn.addEventListener('click', () => {
+        vid.muted = !vid.muted;
+        if (vid.muted) {
+            vpSetVol(0);
+        } else {
+            vid.volume = vid.volume || 0.7;
+            vpSetVol(vid.volume);
+        }
+        updateVolIcon();
+    });
+
+    function updateVolIcon() {
+        const icon = document.getElementById('vp-vol-icon');
+        if (!icon) return;
+        if (vid.muted || vid.volume === 0) {
+            icon.className = 'fa-solid fa-volume-xmark';
+        } else if (vid.volume < 0.5) {
+            icon.className = 'fa-solid fa-volume-low';
+        } else {
+            icon.className = 'fa-solid fa-volume-high';
+        }
+    }
+
+    // --- Open file location ---
+    openFileBtn.addEventListener('click', () => {
+        if (activeVideoEntry) sendMessageToBackend('open_folder', activeVideoEntry.fullPath);
+    });
+
+    // --- Fullscreen ---
+    fsBtn.addEventListener('click', () => {
+        const vw = document.querySelector('.vp-video-wrap');
+        if (!vw) return;
+        if (!document.fullscreenElement) {
+            vw.requestFullscreen().then(() => {
+                fsBtn.querySelector('i').className = 'fa-solid fa-compress';
+            }).catch(() => {});
+        } else {
+            document.exitFullscreen().then(() => {
+                fsBtn.querySelector('i').className = 'fa-solid fa-expand';
+            }).catch(() => {});
+        }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            const i = fsBtn.querySelector('i');
+            if (i) i.className = 'fa-solid fa-expand';
+        }
+    });
+
+    // Initialize volume fill
+    vpSetVol(1);
+
+    // --- Trim handles ---
+    const trimStartEl = document.getElementById('trim-start');
+    const trimEndEl = document.getElementById('trim-end');
+
+    trimStartEl.addEventListener('input', () => {
+        // Enforce start < end
+        const s = parseInt(trimStartEl.value, 10);
+        const e = parseInt(trimEndEl.value, 10);
+        if (s >= e - 10) trimStartEl.value = e - 10;
+        updateTrimSelection();
+    });
+
+    trimEndEl.addEventListener('input', () => {
+        const s = parseInt(trimStartEl.value, 10);
+        const e = parseInt(trimEndEl.value, 10);
+        if (e <= s + 10) trimEndEl.value = s + 10;
+        updateTrimSelection();
+    });
+
+    // --- Preview trim button ---
+    document.getElementById('btn-trim-preview').addEventListener('click', () => {
+        if (!vid.src) return;
+        vid.currentTime = vpTrimStart;
+        vid.play();
+
+        // Pause at trim end
+        const stopAt = vpTrimEnd;
+        const checker = setInterval(() => {
+            if (vid.currentTime >= stopAt) {
+                vid.pause();
+                clearInterval(checker);
+            }
+        }, 100);
+    });
+
+    // --- Export trim button (MediaRecorder approach) ---
+    document.getElementById('btn-trim-export').addEventListener('click', () => {
+        if (!vid.src || trimRecorder) return;
+        if (vpTrimEnd <= vpTrimStart) return;
+
+        if (!window.trimWarningShown) {
+            showModal('Beta Feature warning', 'The trim/record feature is currently buggy and not fully recommended. Output files may vary or lose sync. Continue?', 'confirm', () => {
+                window.trimWarningShown = true;
+                setTimeout(() => document.getElementById('btn-trim-export').click(), 200);
+            });
+            return;
+        }
+
+        const statusEl = document.getElementById('trim-export-status');
+        const exportBtn = document.getElementById('btn-trim-export');
+        const duration = vpTrimEnd - vpTrimStart;
+
+        statusEl.innerHTML = `<div style="margin-bottom:8px;">Recording... please wait</div><div class="trim-progress-track"><div class="trim-progress-fill" id="trim-progress-fill"></div></div>`;
+        statusEl.className = 'trim-export-status trim-export-recording';
+        exportBtn.disabled = true;
+
+        trimChunks = [];
+
+        // Seek to start
+        vid.currentTime = vpTrimStart;
+        vid.muted = false;
+
+        vid.onseeked = () => {
+            vid.onseeked = null;
+            try {
+                const stream = vid.captureStream();
+                const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                    ? 'video/webm;codecs=vp9'
+                    : MediaRecorder.isTypeSupported('video/webm')
+                        ? 'video/webm'
+                        : 'video/mp4';
+
+                trimRecorder = new MediaRecorder(stream, { mimeType });
+                trimRecorder.ondataavailable = e => { if (e.data.size > 0) trimChunks.push(e.data); };
+                trimRecorder.onstop = () => {
+                    const blob = new Blob(trimChunks, { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const baseName = activeVideoEntry
+                        ? activeVideoEntry.name.replace(/\.[^/.]+$/, '')
+                        : 'trim';
+                    a.href = url;
+                    a.download = `${baseName}_trim_${fmtTime(vpTrimStart).replace(':', 'm')}s-${fmtTime(vpTrimEnd).replace(':', 'm')}s.webm`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    statusEl.textContent = 'Export complete! File saved via browser download.';
+                    statusEl.className = 'trim-export-status trim-export-done';
+                    exportBtn.disabled = false;
+                    trimRecorder = null;
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                        statusEl.className = 'trim-export-status';
+                    }, 5000);
+                };
+
+                trimRecorder.start(100);
+                vid.play();
+
+                const progressFill = document.getElementById('trim-progress-fill');
+                const startTime = Date.now();
+                const progInterval = setInterval(() => {
+                    if (!trimRecorder) { clearInterval(progInterval); return; }
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    let pct = (elapsed / duration) * 100;
+                    if (pct > 100) pct = 100;
+                    if (progressFill) progressFill.style.width = pct + '%';
+                }, 100);
+
+                // Stop recording after the trim duration
+                setTimeout(() => {
+                    if (trimRecorder && trimRecorder.state === 'recording') {
+                        vid.pause();
+                        trimRecorder.stop();
+                    }
+                }, duration * 1000 + 200);
+
+            } catch (err) {
+                statusEl.textContent = 'Export failed: ' + err.message;
+                statusEl.className = 'trim-export-status trim-export-recording';
+                exportBtn.disabled = false;
+                trimRecorder = null;
+            }
+        };
+
+        // Trigger the seek
+        if (Math.abs(vid.currentTime - vpTrimStart) < 0.05) {
+            const cb = vid.onseeked;
+            if (cb) {
+                vid.onseeked = null;
+                cb();
+            }
+        }
+    });
+
+    // --- Videos tab: Refresh button ---
+    document.getElementById('btn-refresh-videos').addEventListener('click', () => {
+        loadVideosTab();
+    });
+});
+

@@ -13,7 +13,7 @@ namespace Meteorite
 {
     internal class Program
     {
-        public const string VERSION = "0.1.0";
+        public const string VERSION = "0.1.1";
 
         public const string VERSION_URL = "https://raw.githubusercontent.com/scrim-dev/Meteorite/refs/heads/main/app.version";
 
@@ -105,7 +105,27 @@ namespace Meteorite
             try
             {
                 string remoteVersion = (await Http.GetStringAsync(VERSION_URL)).Trim();
-                if (!string.Equals(remoteVersion, VERSION, StringComparison.OrdinalIgnoreCase))
+                bool parsedRemote = Version.TryParse(remoteVersion.TrimStart('v', 'V'), out Version vRemote);
+                bool parsedLocal = Version.TryParse(VERSION.TrimStart('v', 'V'), out Version vLocal);
+
+                if (parsedRemote && parsedLocal)
+                {
+                    if (vLocal > vRemote)
+                    {
+                        Logger.Log($"Early access build: current={VERSION}, latest={remoteVersion}", "INFO");
+                        Send(window, "beta_build", new { currentVersion = VERSION, latestVersion = remoteVersion });
+                    }
+                    else if (vRemote > vLocal)
+                    {
+                        Logger.Log($"Update available: current={VERSION}, latest={remoteVersion}", "INFO");
+                        Send(window, "update_available", new { currentVersion = VERSION, latestVersion = remoteVersion });
+                    }
+                    else
+                    {
+                        Send(window, "update_not_needed", null);
+                    }
+                }
+                else if (!string.Equals(remoteVersion, VERSION, StringComparison.OrdinalIgnoreCase))
                 {
                     Logger.Log($"Update available: current={VERSION}, latest={remoteVersion}", "INFO");
                     Send(window, "update_available", new { currentVersion = VERSION, latestVersion = remoteVersion });
@@ -297,6 +317,40 @@ namespace Meteorite
                 SettingsManager.Current.UpdateSnoozeUntil = DateTime.UtcNow.AddDays(Program.UPDATE_SNOOZE_DAYS);
                 SettingsManager.Save();
                 Logger.Log($"Update snoozed for {Program.UPDATE_SNOOZE_DAYS} days.", "INFO");
+            }
+            else if (action == "get_videos")
+            {
+                string folder = SettingsManager.Current.DownloadPath;
+                var videos = new System.Collections.Generic.List<object>();
+                string[] extensions = { ".mp4", ".mov", ".mkv", ".avi", ".webm" };
+                if (Directory.Exists(folder))
+                {
+                    // Collect as tuples first so we can sort cleanly
+                    var entries = new System.Collections.Generic.List<(string name, string path, string fullPath, long size, DateTime modified)>();
+                    foreach (var file in new DirectoryInfo(folder).GetFiles())
+                    {
+                        if (Array.Exists(extensions, e => string.Equals(e, file.Extension, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            string fileUri = "file:///" + file.FullName.Replace('\\', '/');
+                            entries.Add((file.Name, fileUri, file.FullName, file.Length, file.LastWriteTime));
+                        }
+                    }
+                    // Most recent first
+                    entries.Sort((a, b) => DateTime.Compare(b.modified, a.modified));
+                    foreach (var e in entries)
+                    {
+                        videos.Add(new
+                        {
+                            name = e.name,
+                            path = e.path,
+                            fullPath = e.fullPath,
+                            size = e.size,
+                            modified = e.modified.ToString("o")
+                        });
+                    }
+                }
+                Logger.Log($"Videos scan: {videos.Count} file(s) found in {folder}", "INFO");
+                Program.Send(window, "videos_data", videos);
             }
         }
     }
