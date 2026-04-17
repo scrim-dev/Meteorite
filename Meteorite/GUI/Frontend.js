@@ -1251,11 +1251,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Fullscreen ---
+    let fsTimeout;
+    const playerContainer = document.getElementById('vp-player-container');
+    
     fsBtn.addEventListener('click', () => {
-        const vw = document.querySelector('.vp-video-wrap');
-        if (!vw) return;
+        if (!playerContainer) return;
         if (!document.fullscreenElement) {
-            vw.requestFullscreen().then(() => {
+            playerContainer.requestFullscreen().then(() => {
                 fsBtn.querySelector('i').className = 'fa-solid fa-compress';
             }).catch(() => {});
         } else {
@@ -1265,10 +1267,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    if (playerContainer) {
+        playerContainer.addEventListener('mousemove', () => {
+            if (document.fullscreenElement) {
+                playerContainer.classList.add('show-controls');
+                playerContainer.style.cursor = 'default';
+                clearTimeout(fsTimeout);
+                fsTimeout = setTimeout(() => {
+                    if (document.fullscreenElement) {
+                        playerContainer.classList.remove('show-controls');
+                        playerContainer.style.cursor = 'none';
+                    }
+                }, 2500);
+            }
+        });
+    }
+
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
             const i = fsBtn.querySelector('i');
             if (i) i.className = 'fa-solid fa-expand';
+            if (playerContainer) {
+                playerContainer.classList.remove('show-controls');
+                playerContainer.style.cursor = '';
+            }
+            clearTimeout(fsTimeout);
         }
     });
 
